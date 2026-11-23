@@ -13,13 +13,12 @@ calcGrowingStockNRF(indicator = "per_ha")
 List of magpie objects with results on country level, weight on country level, unit and description.
 }
 \description{
-Calculates the growing stocks from FAO data for naturally regenerating forests
-i.e. primary forests and secondary forests.
+Growing stock of naturally regenerating forest (FRA 2025) in 1995, the MAgPIE base year,
+interpolated from the FRA years 1990 and 2000. See \code{\link{calcGrowingStockFRA}}.
 }
 \examples{
 \dontrun{
 calcOutput("GrowingStockNRF", indicator = "per_ha", aggregate = TRUE)
-calcOutput("GrowingStockNRF", indicator = "total", aggregate = TRUE)
 }
 
 }
