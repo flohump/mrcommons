@@ -14,7 +14,23 @@
 #' @export
 
 calcTimberDemand <- function() {
-  x <- readSource("FAO_online", "ForestProdTrade")
+  x <- readSource("FAO_online", "ForestProdTrade2026")
+
+  ## FAOSTAT release of 2026: OSB, plywood and the pulpwood production item renamed, tonne quantities (wood pulp)
+  ## and values with new element names; mapped to the names of the release of 2021
+  nm <- getNames(x, dim = 1)
+  nm <- gsub("Oriented strand board (OSB)", "OSB", nm, fixed = TRUE)
+  nm <- gsub("Plywood and LVL", "Plywood", nm, fixed = TRUE)
+  nm <- gsub("Pulpwood, round and split (production)",
+             "Pulpwood, round and split, all species (production)", nm, fixed = TRUE)
+  getNames(x, dim = 1) <- nm
+  x <- x[, , grep("value", getNames(x, dim = 2), ignore.case = TRUE, value = TRUE), invert = TRUE]
+  el <- getNames(x, dim = 2)
+  el <- gsub("Production_(t)", "production", el, fixed = TRUE)
+  el <- gsub("Import_quantity_(t)", "import_m3", el, fixed = TRUE)
+  el <- gsub("Export_quantity_(t)", "export_m3", el, fixed = TRUE)
+  getNames(x, dim = 2) <- el
+  lastYear <- max(getYears(x, as.integer = TRUE))
 
   ## Remove distinction between coniferous and non-coniferous part
   x <- x[, , sort(getNames(x)[grep(pattern = "coniferous", x = getNames(x), invert = TRUE)])]
@@ -79,8 +95,8 @@ calcTimberDemand <- function() {
   lastShareImport[is.na(lastShareImport)] <- 0
   lastShareImport[lastShareImport > 1] <- 1
 
-  pulpwood[, 1990:2019, "export_m3"] <- pulpwood[, 1990:2019, "production"] * lastShareExport
-  pulpwood[, 1990:2019, "import_m3"] <- pulpwood[, 1990:2019, "production"] * lastShareImport
+  pulpwood[, 1990:lastYear, "export_m3"] <- pulpwood[, 1990:lastYear, "production"] * lastShareExport
+  pulpwood[, 1990:lastYear, "import_m3"] <- pulpwood[, 1990:lastYear, "production"] * lastShareImport
   ## Pulpwood export import data is not reported
 
   ## remove pulpwood data fom raw data momentarily
