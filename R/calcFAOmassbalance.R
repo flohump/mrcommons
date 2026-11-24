@@ -81,10 +81,10 @@ calcFAOmassbalance <- function(version = "join2010", yearly = FALSE) {
   mb3 <- mbind(mb2[, cyears, ], feed[, cyears, ])
 
   forest <- calcOutput("TimberDemand", aggregate = FALSE)
-  # quick fix, make 2020 same as 2019
-  forest2020 <- forest[, 2019, ]
-  forest2020 <- setYears(forest2020, 2020)
-  forest <- mbind(forest, forest2020)
+  # FAO data ending before 2020: use 2019 for 2020
+  if (!2020 %in% getYears(forest, as.integer = TRUE)) {
+    forest <- mbind(forest, setYears(forest[, 2019, ], 2020))
+  }
   # Convert m3 to tDM using IPCC climate-region wood density (tDM per m3);
   # FAO wood fuel is already solid m3 under bark (JFSQ definition), so no stacking factor
   woodDensity <- calcOutput("WoodDensity", aggregate = FALSE)
