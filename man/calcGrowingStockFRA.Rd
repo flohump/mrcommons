@@ -7,7 +7,6 @@
 calcGrowingStockFRA(
   category = "plantation",
   indicator = "per_ha",
-  backcast = TRUE,
   years = NULL
 )
 }
@@ -18,8 +17,6 @@ per category.}
 \item{indicator}{"per_ha" (m3/ha, area-weighted), "total" (Mm3, absolute) or "measured" (1 where the per-ha
 series of the category is the country's own entry and changes over the reporting years; weight: the 2020 area
 of the countries with a value).}
-
-\item{backcast}{Trend instead of the mean of the reported years in unreported leading years.}
 
 \item{years}{Years, interpolated between the FRA years (NULL: the FRA years; not used by "measured").}
 }
@@ -32,8 +29,8 @@ A country without a growing stock entry gets the planted-forest growing stock (p
 other planted forest) or the whole-forest growing stock (naturally regenerating forest).
 The weight is the category area; a country still without a value gets no weight.
 Totals of such countries are 0.
-The FRA reader fills unreported years of a series with the mean of its reported years. With \code{backcast}, leading
-years filled that way get the linear trend from the first reported year to 2020 (where that trend is positive).
+The FRA reader fills unreported years of a series with the mean of its reported years. Leading years filled
+that way get the linear trend from the first reported year to 2020 (where that trend is positive).
 }
 \examples{
 \dontrun{
