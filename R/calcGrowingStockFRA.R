@@ -5,15 +5,14 @@
 #' other planted forest) or the whole-forest growing stock (naturally regenerating forest).
 #' The weight is the category area; a country still without a value gets no weight.
 #' Totals of such countries are 0.
-#' The FRA reader fills unreported years of a series with the mean of its reported years. With `backcast`, leading
-#' years filled that way get the linear trend from the first reported year to 2020 (where that trend is positive).
+#' The FRA reader fills unreported years of a series with the mean of its reported years. Leading years filled
+#' that way get the linear trend from the first reported year to 2020 (where that trend is positive).
 #'
 #' @param category FRA category: "plantation", "other_planted" or "nat_reg". Several categories give one item
 #' per category.
 #' @param indicator "per_ha" (m3/ha, area-weighted), "total" (Mm3, absolute) or "measured" (1 where the per-ha
 #' series of the category is the country's own entry and changes over the reporting years; weight: the 2020 area
 #' of the countries with a value).
-#' @param backcast Trend instead of the mean of the reported years in unreported leading years.
 #' @param years Years, interpolated between the FRA years (NULL: the FRA years; not used by "measured").
 #' @return List of magpie objects with results on country level, weight on country level, unit and description.
 #' @author Florian Humpenoeder
@@ -25,7 +24,7 @@
 #' @importFrom magpiesets FRAnames
 #' @export
 
-calcGrowingStockFRA <- function(category = "plantation", indicator = "per_ha", backcast = TRUE, years = NULL) {
+calcGrowingStockFRA <- function(category = "plantation", indicator = "per_ha", years = NULL) {
   if (!all(category %in% c("plantation", "other_planted", "nat_reg"))) {
     stop("Invalid category. Use 'plantation', 'other_planted' or 'nat_reg'.")
   }
@@ -34,7 +33,7 @@ calcGrowingStockFRA <- function(category = "plantation", indicator = "per_ha", b
   }
   if (length(category) > 1) {
     parts <- lapply(category, function(k) {
-      calcOutput("GrowingStockFRA", category = k, indicator = indicator, backcast = backcast, years = years,
+      calcOutput("GrowingStockFRA", category = k, indicator = indicator, years = years,
                  aggregate = FALSE, supplementary = TRUE)
     })
     bind <- function(what) {
@@ -56,23 +55,22 @@ calcGrowingStockFRA <- function(category = "plantation", indicator = "per_ha", b
   cat <- FRAnames(category)
   raw <- collapseNames(perHa[, , cat])
   rawNat <- collapseNames(perHa[, , FRAnames("nat_reg")])
-  if (backcast) {
-    fraYears <- getYears(perHa, as.integer = TRUE)
-    trend <- function(v) {
-      n <- length(v)
-      for (k in rev(seq_len(n - 3))) {
-        m <- mean(v[(k + 1):n])
-        if (m > 0 && all(abs(v[1:k] - m) < 1e-6 * m) && diff(range(v[(k + 1):n])) > 1e-6 * m) {
-          first <- fraYears[k + 1]
-          b <- v[k + 1] - (v[fraYears == 2020] - v[k + 1]) / (2020 - first) * (first - fraYears[1:k])
-          v[1:k][b > 0] <- b[b > 0]
-          break
-        }
+  # leading years filled with the mean: linear trend from the first reported year to 2020
+  fraYears <- getYears(perHa, as.integer = TRUE)
+  trend <- function(v) {
+    n <- length(v)
+    for (k in rev(seq_len(n - 3))) {
+      m <- mean(v[(k + 1):n])
+      if (m > 0 && all(abs(v[1:k] - m) < 1e-6 * m) && diff(range(v[(k + 1):n])) > 1e-6 * m) {
+        first <- fraYears[k + 1]
+        b <- v[k + 1] - (v[fraYears == 2020] - v[k + 1]) / (2020 - first) * (first - fraYears[1:k])
+        v[1:k][b > 0] <- b[b > 0]
+        break
       }
-      return(v)
     }
-    perHa[] <- aperm(apply(as.array(perHa), c(1, 3), trend), c(2, 1, 3))
+    return(v)
   }
+  perHa[] <- aperm(apply(as.array(perHa), c(1, 3), trend), c(2, 1, 3))
   x <- collapseNames(perHa[, , cat])
   weight <- collapseNames(area[, , cat])
   fallback <- collapseNames(perHa[, , ifelse(category == "nat_reg", "Forest", "Managed Forest")])
